@@ -1,0 +1,15 @@
+html
+  head
+    title User Profile
+    link(rel='stylesheet' href='/style.css')
+  body
+    h1 User Profile
+    h2 Purchased Sets
+    ul
+      each set in purchasedSets
+        li #{set.name}
+    h2 Cart
+    ul
+      each set in savedSets
+        li #{set.name}
+    a(href='/tracks?page=1') Back to Tracklists

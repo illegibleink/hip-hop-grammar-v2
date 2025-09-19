@@ -1,0 +1,10 @@
+html
+  head
+    title Artists - #{set.name}
+    link(rel='stylesheet' href='/style.css')
+  body
+    h1 #{set.name} Artists
+    ul
+      each track in set.tracks
+        li #{track.release_date.slice(2, 4)} #{track.artists.join(', ')}
+    a(href=`/tracks?page=${Math.floor(Object.keys(trackSets).indexOf(setId) / 12) + 1}`) Back

@@ -1,0 +1,4 @@
+tracklists.json
+.env
+node_modules/
+*.log

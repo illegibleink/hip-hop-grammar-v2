@@ -1,0 +1,6 @@
+{
+    "tracklists": "query Tracklists($page: Int!) { tracklists(page: $page) { name tracks { name } price } }",
+    "search": "query Search($query: String!, $type: String!) { search(query: $query, type: $type) { name tracks { name } price } }",
+    "purchaseTracklist": "mutation PurchaseTracklist($tracklistName: String!) { purchaseTracklist(tracklistName: $tracklistName) }",
+    "saveToSpotify": "mutation SaveToSpotify($tracklistName: String!) { saveToSpotify(tracklistName: $tracklistName) }"
+}

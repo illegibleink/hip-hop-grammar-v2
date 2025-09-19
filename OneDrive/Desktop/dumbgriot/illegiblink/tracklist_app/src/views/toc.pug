@@ -1,0 +1,11 @@
+html
+  head
+    title Table of Contents
+    link(rel='stylesheet' href='/style.css')
+  body
+    h1 Table of Contents
+    ul
+      each set, setId in trackSets
+        li
+          a(href=`/tracks?page=${Math.floor(Object.keys(trackSets).indexOf(setId) / 12) + 1}`) #{set.name}
+    a(href='/') Back to Title

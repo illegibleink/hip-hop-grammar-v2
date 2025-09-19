@@ -1,0 +1,55 @@
+html
+  head
+    title Tracklists
+    link(rel='stylesheet' href='/style.css')
+    script(src='https://js.stripe.com/v3/')
+  body(data-stripe-key=stripePublishableKey class=theme || 'light-mode')
+    .header-row
+      .header-column.logo-column
+        a.home-logo(href='/')
+          img(src='/logo.png' alt='Logo' width='40' height='auto')
+      .header-column.title-column
+        .title-wrapper
+          h1 Tracklists
+          h2 Explore our collection
+      .header-column.logout-column
+        a.logout-button(href='/logout') Logout
+    .track-container
+      if Object.keys(tracklists).length === 0
+        p No tracklists available. Please check server configuration.
+      else
+        each tracklist, tracklistName in tracklists
+          .track-card(data-tracklist-name=tracklistName data-year-span=tracklist.yearSpan data-genres=tracklist.uniqueGenres.join(',') class=(parseInt(tracklist.name.slice(1)) <= 12 ? 'nineties' : 'twenties'))
+            .track-info
+              h3 #{tracklist.name}
+              each track in tracklist.tracks
+                p.track-name(class=(purchasedTracklists.includes(tracklistName) ? 'purchased' : '')) #{track.name}
+                if purchasedTracklists.includes(tracklistName) || parseInt(tracklist.name.slice(1)) <= 12
+                  p.artist-release(class=(purchasedTracklists.includes(tracklistName) ? 'visible' : '')) #{track.artists.join(', ')} (#{track.genre || 'Unknown'})
+            .track-actions
+              if purchasedTracklists.includes(tracklistName)
+                button.unlocked(disabled) Unlocked
+              else
+                button.unlock(data-tracklist-name=tracklistName) Unlock #{tracklist.price === 0 ? '' : `($${tracklist.price.toFixed(2)})`}
+    .pagination
+      a.pagination-arrow(class=(page > 1 ? '' : 'disabled') href=(page > 1 ? `/tracks?page=${page - 1}` : '#') title='Previous') ←
+      span.pagination-dots ...
+      a.pagination-arrow(class=(page < totalPages ? '' : 'disabled') href=(page < totalPages ? `/tracks?page=${page + 1}` : '#') title='Next') →
+    .cart-modal
+      h3 Cart (Max 12)
+      .cart-items
+      p.cart-total Total: $0
+      button.checkout-cart Checkout
+      button.close-modal Close
+      button.clear-cart Clear Cart
+    .footer
+      a(href='/privacy') Privacy Policy
+      a(href='/terms') Terms of Service
+      .footer-powered
+        span Powered by
+        img.footer-logo(src='/spotify-logo.png' alt='Spotify')
+      button.theme-toggle(title='Toggle Theme') ☀️
+    script(src='/scripts.js')
+    script.
+      console.log('Tracklists count:', !{JSON.stringify(Object.keys(tracklists).length)});
+      console.log('Current page:', !{page}, 'Total pages:', !{totalPages});

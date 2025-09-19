@@ -1,0 +1,9 @@
+html
+  head
+    title Tracklist App
+    link(rel='stylesheet' href='/style.css')
+    script(src='https://js.stripe.com/v3/')
+  body(data-stripe-key=stripePublishableKey)
+    h1#text Tracklist App
+    a(href='/tracks?page=1') Next
+    script(src='/scripts.js')
