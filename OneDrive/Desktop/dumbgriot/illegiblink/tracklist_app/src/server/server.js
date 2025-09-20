@@ -13,7 +13,7 @@ const helmet = require('helmet');
 const crypto = require('crypto');
 const fs = require('fs');
 
-const app = express();
+const app = express(); // Initialize Express app
 app.set('view engine', 'pug');
 app.set('views', './src/views');
 
@@ -348,12 +348,16 @@ app.get('/tracks', ensureAuthenticated, async (req, res) => {
     })
   );
   const totalPages = Math.ceil(Object.keys(tracklists).length / 12) || 1;
+  const houseNumber = page;
+  const houseTitles = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'];
+  const pageTitle = `${houseTitles[page - 1] || page + 'th'} House`;
   console.log(`Rendering /tracks?page=${page}, tracklists: ${Object.keys(tracklistsWithMetadata).length}, total: ${Object.keys(tracklists).length}, totalPages: ${totalPages}`);
   res.render('tracklists', {
     tracklists: tracklistsWithMetadata,
     purchasedTracklists,
     page,
     totalPages,
+    pageTitle,
     stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
     theme: req.session.theme || 'light-mode'
   });

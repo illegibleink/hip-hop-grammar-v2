@@ -1,15 +1,33 @@
+/* Define the custom font */
+@font-face {
+  font-family: 'Gobbie Gobble';
+  src: url('/fonts/Gobbie Gobble.otf') format('opentype'),
+       url('/fonts/Gobbie Gobble.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
 body {
   font-family: Arial, sans-serif;
   background-color: #f4f4f4;
   margin: 0;
-  padding: 20px;
+  padding: 0; /* Removed padding to let wrapper handle it */
   transition: background-color 0.3s, color 0.3s;
+}
+
+/* Responsive Wrapper */
+.wrapper {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px 15px;
+  box-sizing: border-box;
 }
 
 h1 {
   text-align: center;
   color: #333;
   font-size: 2rem;
+  margin-bottom: 0.5rem;
 }
 
 h2 {
@@ -18,47 +36,53 @@ h2 {
   font-size: 1.2rem;
   font-weight: normal;
   margin-top: 0.5rem;
+  margin-bottom: 2rem;
 }
 
 h3 {
-  margin: 0;
+  margin: 0 0 1rem 0; /* Spacing below tracklist title */
   font-size: 18px;
   color: #333;
 }
 
 .track-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, 1fr); /* Desktop: 4 columns */
   gap: 20px;
-  max-width: 1280px;
-  margin: 80px auto;
+  margin: 40px auto; /* Reduced margin for better spacing */
+  align-items: stretch;
+  justify-content: center;
 }
 
 .track-card {
-  width: 300px;
+  width: 100%;
+  max-width: 300px; /* Constrain card width */
+  min-height: 200px;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   position: relative;
-  transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
+  transition: box-shadow 0.2s, background-color 0.3s;
   cursor: pointer;
+  contain: content;
+  margin: 0 auto; /* Center cards in grid cells */
 }
 
 body.light-mode .track-card:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   background-color: #f9f9f9;
 }
 
 body.dark-mode .track-card:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 4px rgba(255, 255, 255, 0.0);
+  box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
   background-color: #3a3a3a;
 }
 
 body.dark-mode .track-card {
   background-color: #333;
-  box-shadow: 0 0px 0px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 5px rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode h1, body.dark-mode h2, body.dark-mode h3 {
@@ -75,18 +99,23 @@ body.dark-mode .track-name, body.dark-mode .artist-release {
 }
 
 .track-name {
-  margin: 5px 0;
+  margin: 0.5rem 0; /* Spacing for track names */
   font-size: 16px;
   color: #333;
+  font-family: 'Gobbie Gobble', Arial, sans-serif;
 }
 
 .track-name.purchased {
   font-weight: bold;
+  font-family: Arial, sans-serif;
+}
+
+.track-name.animate, .artist-release.animate {
   animation: slideIn 0.3s ease-in-out;
 }
 
 .artist-release {
-  margin: 5px 0;
+  margin: 0.5rem 0; /* Spacing for artist-release */
   font-style: italic;
   color: #666;
   opacity: 0;
@@ -134,7 +163,7 @@ body.dark-mode .track-name, body.dark-mode .artist-release {
 .cart-modal {
   position: fixed;
   top: 0;
-  right: -400px;
+  right: -400px; /* Hidden by default */
   width: 400px;
   height: 100%;
   background-color: #fff;
@@ -142,6 +171,7 @@ body.dark-mode .track-name, body.dark-mode .artist-release {
   transition: right 0.3s ease-in-out;
   z-index: 1000;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 body.dark-mode .cart-modal {
@@ -150,11 +180,12 @@ body.dark-mode .cart-modal {
 }
 
 .cart-modal.open {
-  right: 0;
+  right: 0; /* Slide in when open */
 }
 
 .cart-total {
   font-weight: bold;
+  margin: 1rem 0;
 }
 
 .pagination {
@@ -194,11 +225,8 @@ body.dark-mode .pagination-dots {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 40px;
+  margin-top: 20px;
   margin-bottom: 20px;
-  max-width: 980px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .header-column {
@@ -316,11 +344,16 @@ body.dark-mode .theme-toggle {
   color: #fff;
 }
 
+/* Tablet (max-width: 980px) */
 @media (max-width: 980px) {
+  .wrapper {
+    padding: 15px 10px;
+  }
+
   .header-row {
     flex-direction: column;
     text-align: center;
-    gap: 20px;
+    gap: 15px;
   }
 
   .header-column {
@@ -328,15 +361,23 @@ body.dark-mode .theme-toggle {
   }
 
   .track-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr); /* Tablet: 2 columns */
+    gap: 15px;
+    grid-template-rows: repeat(2, auto); /* Enforce 2 rows */
   }
 
   .track-card {
-    width: 250px;
+    max-width: 100%;
+    min-height: 200px;
   }
 }
 
+/* Mobile (max-width: 600px) */
 @media (max-width: 600px) {
+  .wrapper {
+    padding: 10px 5px;
+  }
+
   h1 {
     font-size: 1.5rem;
   }
@@ -346,12 +387,23 @@ body.dark-mode .theme-toggle {
   }
 
   .track-container {
-    grid-template-columns: 1fr;
-    align-items: center;
+    grid-template-columns: 1fr; /* Mobile: 1 column */
+    gap: 15px;
+    grid-template-rows: auto; /* Single column, auto rows */
+    justify-items: center;
   }
 
   .track-card {
-    width: 100%;
     max-width: 300px;
+    min-height: 200px;
+  }
+
+  .cart-modal {
+    width: 100%;
+    right: -100%; /* Hidden by default */
+  }
+
+  .cart-modal.open {
+    right: 0; /* Slide in when open */
   }
 }
