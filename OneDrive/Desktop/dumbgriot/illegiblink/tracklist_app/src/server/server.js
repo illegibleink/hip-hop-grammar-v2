@@ -13,7 +13,7 @@ const helmet = require('helmet');
 const crypto = require('crypto');
 const fs = require('fs');
 
-const app = express(); // Initialize Express app
+const app = express();
 app.set('view engine', 'pug');
 app.set('views', './src/views');
 
@@ -42,7 +42,7 @@ app.use(session({
   store: process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('sqlite')
     ? new SQLiteStore({ db: 'sessions.db', dir: './data' })
     : new PGSession({
-        pool: new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }),
+        aiguille: new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }),
         tableName: 'session'
       }),
   secret: process.env.SESSION_SECRET || 'default-secret',
@@ -237,6 +237,7 @@ const resolvers = {
     addToCart: async (_, { tracklistName }, { userId }) => {
       if (!userId) throw new Error('Not authenticated');
       if (!tracklists[tracklistName]) throw new Error('Invalid tracklist');
+      if (tracklists[tracklistName].price === 0) throw new Error('Free tracklists cannot be added to cart');
       const count = (await pool.query(
         process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('sqlite')
           ? 'SELECT COUNT(*) AS count FROM cart WHERE userId = ?'
@@ -305,7 +306,7 @@ const isPurchased = rule()(async (_, { name }, { userId }) => {
       : 'SELECT * FROM purchases WHERE userId = $1 AND tracklistName = $2',
     [userId, name]
   );
-  return purchase.rows.length > 0 || tracklists[name]?.price === 0;
+  return purchase.rows.length > 0;
 });
 const permissions = shield({
   Track: { name: isAuthenticated, artists: and(isAuthenticated, isPurchased) },
@@ -448,6 +449,10 @@ app.post('/add-to-cart', ensureAuthenticated, async (req, res) => {
   if (!tracklists[tracklistName]) {
     console.error('Add to cart failed: Invalid tracklistName:', tracklistName);
     return res.status(400).json({ code: 400, message: 'Invalid tracklist' });
+  }
+  if (tracklists[tracklistName].price === 0) {
+    console.error('Add to cart failed: Free tracklists cannot be added to cart');
+    return res.status(400).json({ code: 400, message: 'Free tracklists cannot be added to cart' });
   }
   try {
     await resolvers.Mutation.addToCart(null, { tracklistName }, { userId: req.session.userId });

@@ -12,6 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
     body.classList.toggle('dark-mode', !isDark);
     body.classList.toggle('light-mode', isDark);
     themeToggle.textContent = isDark ? '☀️' : '🌙';
+    fetch('/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `mutation { setTheme(theme: "${isDark ? 'light' : 'dark'}") }`
+      }),
+      credentials: 'include'
+    }).catch(error => console.error('Error saving theme:', error));
     localStorage.setItem('theme', isDark ? 'light' : 'dark');
   };
 
@@ -101,15 +109,19 @@ document.addEventListener('DOMContentLoaded', () => {
           if (response.ok) {
             const card = button.closest('.track-card');
             card.querySelectorAll('.track-name').forEach(name => {
-              name.classList.add('purchased');
+              name.classList.remove('locked');
+              name.classList.add('purchased', 'animate');
             });
             card.querySelectorAll('.artist-release').forEach(artist => {
-              artist.classList.add('visible');
+              artist.classList.add('visible', 'animate');
             });
             button.classList.remove('unlock');
             button.classList.add('unlocked');
             button.textContent = 'Unlocked';
             button.disabled = true;
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
           } else {
             console.error('Purchase failed:', result.message);
             if (result.code === 401) {
@@ -206,7 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Logout Button
   document.querySelector('.logout-button').addEventListener('click', async (e) => {
     e.preventDefault();
     try {

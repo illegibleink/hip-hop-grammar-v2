@@ -26,7 +26,7 @@ html
               .track-info
                 h3 #{tracklist.name}
                 each track in sortedTracks
-                  p.track-name(class=(isPurchased ? 'purchased' : '')) #{track.name}
+                  p.track-name(class=(isPurchased ? 'purchased' : 'locked')) #{track.name}
                   if isPurchased
                     p.artist-release(class='visible') #{track.artists.join(', ')} (#{track.release_date ? track.release_date.slice(0, 4) : 'Unknown'})
               .track-actions
