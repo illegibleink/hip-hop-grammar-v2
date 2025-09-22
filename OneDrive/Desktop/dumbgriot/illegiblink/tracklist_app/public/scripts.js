@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cartTotal = document.querySelector('.cart-total');
   const themeToggle = document.querySelector('.theme-toggle');
   const body = document.body;
+  let checkoutInstance = null;
 
   // Theme Toggle
   const toggleTheme = () => {
@@ -108,20 +109,64 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log(`Purchase response for ${tracklistName}:`, result);
           if (response.ok) {
             const card = button.closest('.track-card');
-            card.querySelectorAll('.track-name').forEach(name => {
-              name.classList.remove('locked');
-              name.classList.add('purchased', 'animate');
+            const trackInfo = card.querySelector('.track-info');
+            // Store original track elements
+            const trackElements = Array.from(card.querySelectorAll('.track-name'));
+            // Step 1: Animate font transition and unlock
+            trackElements.forEach((name, index) => {
+              setTimeout(() => {
+                name.classList.remove('locked');
+                name.classList.add('purchased', 'animate');
+                name.style.fontFamily = 'Arial, sans-serif';
+              }, index * 100); // Stagger by 100ms per track
             });
-            card.querySelectorAll('.artist-release').forEach(artist => {
-              artist.classList.add('visible', 'animate');
-            });
+            // Step 2: Reorder tracks to original order
+            setTimeout(() => {
+              trackElements.forEach((name, index) => {
+                const originalIndex = parseInt(name.dataset.originalIndex);
+                name.style.order = originalIndex;
+                name.classList.add('reorder');
+              });
+            }, 200); // Start reordering after font transition begins
+            // Step 3: Insert and animate artist-release
+            setTimeout(() => {
+              // Fetch original track data to insert artist-release in correct order
+              fetch('/graphql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  query: `query { tracklists(page: ${new URLSearchParams(window.location.search).get('page') || 1}) { name tracks { name artists release_date } } }`
+                }),
+                credentials: 'include'
+              })
+                .then(response => response.json())
+                .then(({ data }) => {
+                  const tracklist = data.tracklists.find(t => t.name === tracklistName);
+                  if (tracklist) {
+                    trackElements.forEach((name, index) => {
+                      const track = tracklist.tracks.find(t => t.name === name.textContent);
+                      if (track) {
+                        const artistRelease = document.createElement('p');
+                        artistRelease.className = 'artist-release animate';
+                        artistRelease.style.order = name.style.order;
+                        artistRelease.textContent = `${track.artists.join(', ')} (${track.release_date ? track.release_date.slice(0, 4) : 'Unknown'})`;
+                        name.insertAdjacentElement('afterend', artistRelease);
+                        setTimeout(() => {
+                          artistRelease.classList.add('visible');
+                        }, index * 50); // Slight stagger for artist-release
+                      }
+                    });
+                  }
+                })
+                .catch(error => console.error('Error fetching tracklist for artist-release:', error));
+            }, 300); // Start artist-release after reordering
             button.classList.remove('unlock');
             button.classList.add('unlocked');
             button.textContent = 'Unlocked';
             button.disabled = true;
             setTimeout(() => {
               window.location.reload();
-            }, 500);
+            }, 1200); // Delay to allow animations to complete
           } else {
             console.error('Purchase failed:', result.message);
             if (result.code === 401) {
@@ -163,13 +208,117 @@ document.addEventListener('DOMContentLoaded', () => {
     checkoutCartButton.addEventListener('click', async () => {
       const page = new URLSearchParams(window.location.search).get('page') || 1;
       try {
+        const checkoutContainer = document.getElementById('checkout-container');
+        checkoutContainer.style.display = 'none';
+        if (checkoutInstance) {
+          checkoutInstance.unmount();
+          checkoutInstance.destroy();
+          checkoutInstance = null;
+        }
         const response = await fetch(`/checkout?page=${page}`, {
           credentials: 'include'
         });
         const result = await response.json();
         console.log('Checkout response:', result);
         if (response.ok) {
-          window.location.href = result.url;
+          checkoutInstance = await stripe.initEmbeddedCheckout({
+            clientSecret: result.client_secret
+          });
+          checkoutContainer.style.display = 'block';
+          checkoutCartButton.style.display = 'none';
+          checkoutInstance.mount('#checkout-container');
+          checkoutInstance.on('complete', async () => {
+            const verifyResponse = await fetch('/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session_id: result.session_id }),
+              credentials: 'include'
+            });
+            const verifyResult = await verifyResponse.json();
+            if (verifyResponse.ok && verifyResult.success) {
+              checkoutInstance.unmount();
+              checkoutInstance.destroy();
+              checkoutInstance = null;
+              checkoutContainer.style.display = 'none';
+              checkoutCartButton.style.display = 'block';
+              cartModal.classList.remove('open');
+              await updateCart();
+              // Animate purchased tracklists
+              document.querySelectorAll('.track-card').forEach(card => {
+                if (card.querySelector('.unlocked')) {
+                  const trackElements = Array.from(card.querySelectorAll('.track-name'));
+                  // Font transition and unlock
+                  trackElements.forEach((name, index) => {
+                    setTimeout(() => {
+                      name.classList.remove('locked');
+                      name.classList.add('purchased', 'animate');
+                      name.style.fontFamily = 'Arial, sans-serif';
+                    }, index * 100);
+                  });
+                  // Reorder tracks
+                  setTimeout(() => {
+                    trackElements.forEach((name, index) => {
+                      const originalIndex = parseInt(name.dataset.originalIndex);
+                      name.style.order = originalIndex;
+                      name.classList.add('reorder');
+                    });
+                  }, 200);
+                  // Insert and animate artist-release
+                  setTimeout(() => {
+                    fetch('/graphql', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        query: `query { tracklists(page: ${page}) { name tracks { name artists release_date } } }`
+                      }),
+                      credentials: 'include'
+                    })
+                      .then(response => response.json())
+                      .then(({ data }) => {
+                        const tracklist = data.tracklists.find(t => t.name === card.dataset.tracklistName);
+                        if (tracklist) {
+                          trackElements.forEach((name, index) => {
+                            const track = tracklist.tracks.find(t => t.name === name.textContent);
+                            if (track) {
+                              const artistRelease = document.createElement('p');
+                              artistRelease.className = 'artist-release animate';
+                              artistRelease.style.order = name.style.order;
+                              artistRelease.textContent = `${track.artists.join(', ')} (${track.release_date ? track.release_date.slice(0, 4) : 'Unknown'})`;
+                              name.insertAdjacentElement('afterend', artistRelease);
+                              setTimeout(() => {
+                                artistRelease.classList.add('visible');
+                              }, index * 50);
+                            }
+                          });
+                        }
+                      })
+                      .catch(error => console.error('Error fetching tracklist for artist-release:', error));
+                  }, 300);
+                }
+              });
+              setTimeout(() => {
+                window.location.reload();
+              }, 1200);
+            } else {
+              alert(verifyResult.message || 'Payment verification failed');
+            }
+          });
+          checkoutInstance.on('error', (event) => {
+            console.error('Checkout error:', event.error);
+            alert('Payment failed: ' + event.error.message);
+            checkoutInstance.unmount();
+            checkoutInstance.destroy();
+            checkoutInstance = null;
+            checkoutContainer.style.display = 'none';
+            checkoutCartButton.style.display = 'block';
+          });
+          checkoutInstance.on('close', () => {
+            checkoutInstance.unmount();
+            checkoutInstance.destroy();
+            checkoutInstance = null;
+            checkoutContainer.style.display = 'none';
+            checkoutCartButton.style.display = 'block';
+          });
         } else {
           console.error('Checkout failed:', result.message);
           if (result.code === 401) {
@@ -181,6 +330,13 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         console.error('Checkout network error:', error.message);
         alert('Checkout error: ' + error.message);
+        if (checkoutInstance) {
+          checkoutInstance.unmount();
+          checkoutInstance.destroy();
+          checkoutInstance = null;
+        }
+        checkoutContainer.style.display = 'none';
+        checkoutCartButton.style.display = 'block';
       }
     });
   }
@@ -188,6 +344,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModalButton = document.querySelector('.close-modal');
   if (closeModalButton) {
     closeModalButton.addEventListener('click', () => {
+      if (checkoutInstance) {
+        checkoutInstance.unmount();
+        checkoutInstance.destroy();
+        checkoutInstance = null;
+      }
+      document.getElementById('checkout-container').style.display = 'none';
+      document.querySelector('.checkout-cart').style.display = 'block';
       cartModal.classList.remove('open');
     });
   }

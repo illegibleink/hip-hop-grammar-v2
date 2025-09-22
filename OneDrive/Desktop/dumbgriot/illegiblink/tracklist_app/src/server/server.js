@@ -26,7 +26,8 @@ app.use(helmet({
       scriptSrc: ["'self'", 'https://js.stripe.com'],
       frameSrc: ['https://js.stripe.com', 'https://checkout.stripe.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'https:']
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https://api.stripe.com', 'https://checkout.stripe.com']
     }
   }
 }));
@@ -379,6 +380,7 @@ app.get('/checkout', ensureAuthenticated, async (req, res) => {
       return res.status(400).json({ code: 400, message: 'No premium tracklists in cart' });
     }
     const session = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded',
       payment_method_types: ['card'],
       line_items: cartItems.map(name => ({
         price_data: {
@@ -389,19 +391,22 @@ app.get('/checkout', ensureAuthenticated, async (req, res) => {
         quantity: 1
       })),
       mode: 'payment',
-      success_url: `${process.env.APP_URL}/success?page=${pageNum}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.APP_URL}/tracks?page=${pageNum}`
+      redirect_on_completion: 'never',
+      return_url: `${process.env.APP_URL}/tracks?page=${pageNum}`,
+      appearance: {
+        theme: 'stripe',
+        variables: { colorPrimary: '#1DB954' }
+      }
     });
-    return res.json({ url: session.url });
+    res.json({ client_secret: session.client_secret, session_id: session.id });
   } catch (error) {
     console.error('Stripe checkout error:', error.message);
     return res.status(500).json({ code: 500, message: `Checkout failed: ${error.message}` });
   }
 });
 
-app.get('/success', ensureAuthenticated, async (req, res) => {
-  res.setHeader('Cache-Control', 'private, no-store');
-  const { page, session_id } = req.query;
+app.post('/verify-payment', ensureAuthenticated, async (req, res) => {
+  const { session_id } = req.body;
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
     if (session.payment_status === 'paid') {
@@ -425,12 +430,18 @@ app.get('/success', ensureAuthenticated, async (req, res) => {
           : 'DELETE FROM cart WHERE userId = $1',
         [req.session.userId]
       );
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ code: 400, message: 'Payment not completed' });
     }
-    res.redirect(`/tracks?page=${page || 1}`);
   } catch (error) {
-    console.error('Checkout verification error:', error.message);
-    res.status(500).send(`Payment verification failed: ${error.message}`);
+    console.error('Payment verification error:', error.message);
+    res.status(500).json({ code: 500, message: `Verification failed: ${error.message}` });
   }
+});
+
+app.get('/success', ensureAuthenticated, async (req, res) => {
+  res.redirect(`/tracks?page=${req.query.page || 1}`);
 });
 
 app.get('/login', (req, res) => {
