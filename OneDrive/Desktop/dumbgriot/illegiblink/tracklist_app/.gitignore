@@ -3,3 +3,122 @@ tracklists.json
 .env
 node_modules/
 *.log
+
+# Windows system and user directories (prevent scanning outside project)
+/AppData/
+/Application Data/
+/Cookies/
+/Documents/
+/Downloads/
+/Favorites/
+/Links/
+/Music/
+/Pictures/
+/Videos/
+/Saved Games/
+/Local Settings/
+/My Documents/
+/NetHood/
+/PrintHood/
+/Recent/
+/SendTo/
+/Start Menu/
+/Templates/
+/3D Objects/
+/Contacts/
+/NTUSER*
+/ntuser*
+/OneDrive*/
+/desktop.ini
+*.lnk
+*.blf
+*.regtrans-ms
+
+# Hidden files and caches
+/.gitconfig
+/.gitignore  # Global one, if any
+/.cache/
+/.conda/
+/.config/
+/.continuum/
+/.docker/
+/.dotnet/
+/.idea/
+/.ipynb_checkpoints/
+/.ipython/
+/.jupyter/
+/.matplotlib/
+/.node_repl_history
+/.openbb_terminal/
+/.ssh/
+/.spyder-py3/
+/.vscode/
+/.VirtualBox/
+/.bash_history
+/.codeium/
+/.condarc
+/.continuum/
+/.gittar/
+/.lesshst
+/.windows-build-tools/
+/.yarnrc
+/_netrc
+
+# Development tools and installs
+*.exe
+*.msi
+*.zip
+/anaconda3/
+/codecrafters-redis-javascript/
+/contracts/
+/go/
+/hardhat-tutorial/
+/hardhat-verification/
+/hrdht/
+/j5create-22.01.0602.3179.exe
+/OpenBB/
+/OpenBBTerminal/
+/OpenBBUserData/
+/postgis_3_4_pg12.exe
+/postgis_3_4_pg16.exe
+/pyscript-main/
+/SteamSetup.exe
+/edb_languagepack_4.exe
+
+# Project backups and unrelated files
+/tracklist_app_backup/
+/databases/
+/MusicBrainzApp/
+/myBIBLE - AstrololgyApp/
+/BOIR/
+/Business/
+/Coding_sTUFF/
+/Editors/
+/GameMakerProjects/
+/IntelGraphicsProfiles/
+/resources/
+/__MACOSX/
+*.txt  # Adjust if you want to track specific .txt files
+*.docx
+*.pdf
+*.xlsx
+*.odt
+*.pptx
+*.json  # Exclude all JSON except what you add explicitly; adjust if needed
+*.sql
+*.ipynb
+/Documents/  # Subfolder exclusions
+/.849C9593-D756-4E56-8D6E-42412F2A707B
+
+# Database and temp files (if not tracking them)
+*.db
+data/dev.db
+data/sessions.db
+
+# Ignore everything in parent directories (safety net)
+/*
+!.git
+!data/
+!src/
+!public/
+# Add ! before other folders you want to include, e.g., !README.md
