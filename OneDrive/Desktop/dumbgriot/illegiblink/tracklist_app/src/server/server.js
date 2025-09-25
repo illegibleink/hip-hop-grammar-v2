@@ -3,7 +3,7 @@ const express = require('express');
 const { createYoga } = require('graphql-yoga');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
 const { shield, rule, and } = require('graphql-shield');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-09-30.acacia' });
 const session = require('express-session');
 const PGSession = require('connect-pg-simple')(session);
 const SQLiteStore = require('connect-sqlite3')(session);
@@ -13,21 +13,54 @@ const helmet = require('helmet');
 const crypto = require('crypto');
 const fs = require('fs');
 
+// Log Stripe SDK version and API version at startup
+const stripeModule = require('stripe');
+console.log('Stripe SDK version:', stripeModule.VERSION || 'Unknown (possible module issue)');
+console.log('Stripe module details:', {
+  version: stripeModule.VERSION,
+  hasVersion: !!stripeModule.VERSION,
+  isFunction: typeof stripe === 'function',
+  stripeKeys: Object.keys(stripeModule).slice(0, 10)
+});
+console.log('Stripe API version:', '2024-09-30.acacia');
+(async () => {
+  try {
+    const balance = await stripe.balance.retrieve();
+    console.log('Stripe API connectivity test successful, balance retrieved:', balance);
+  } catch (error) {
+    console.error('Stripe API connectivity test failed:', {
+      message: error.message,
+      code: error.code,
+      type: error.type,
+      stack: error.stack
+    });
+  }
+})();
+
 const app = express();
 app.set('view engine', 'pug');
 app.set('views', './src/views');
 
-// Security and Static Assets
+if (process.env.NODE_ENV === 'production' && !app.get('env').includes('localhost')) {
+  app.use((req, res, next) => {
+    if (!req.secure && req.get('x-forwarded-proto') !== 'https') {
+      console.log(`Redirecting HTTP to HTTPS for ${req.url}`);
+      return res.redirect(`https://${req.get('host')}${req.url}`);
+    }
+    next();
+  });
+}
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      scriptSrc: ["'self'", 'https://js.stripe.com'],
-      frameSrc: ['https://js.stripe.com', 'https://checkout.stripe.com'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://*.stripe.com'],
+      scriptSrc: ["'self'", 'https://js.stripe.com/v3/', 'https://*.stripe.com'],
+      frameSrc: ['https://js.stripe.com', 'https://checkout.stripe.com', 'https://*.stripe.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https://api.stripe.com', 'https://checkout.stripe.com']
+      connectSrc: ["'self'", 'https://api.stripe.com', 'https://checkout.stripe.com', 'https://*.stripe.com']
     }
   }
 }));
@@ -43,20 +76,19 @@ app.use(session({
   store: process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('sqlite')
     ? new SQLiteStore({ db: 'sessions.db', dir: './data' })
     : new PGSession({
-        aiguille: new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }),
+        pool: new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }),
         tableName: 'session'
       }),
   secret: process.env.SESSION_SECRET || 'default-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production',
+  cookie: {
+    secure: process.env.NODE_ENV === 'production' && !app.get('env').includes('localhost'),
     maxAge: 24 * 60 * 60 * 1000,
     sameSite: 'lax'
   }
 }));
 
-// Load Encrypted Data
 const algorithm = 'aes-256-cbc';
 const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
 const decryptFile = () => {
@@ -96,7 +128,6 @@ if (Object.keys(tracklists).length === 0) {
   console.error('No tracklists loaded, check tracks.json.enc and ENCRYPTION_KEY');
 }
 
-// Database Setup
 let pool;
 if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('sqlite')) {
   pool = new sqlite3.Database(process.env.DATABASE_URL.replace('sqlite://', ''), (err) => {
@@ -112,7 +143,6 @@ if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('sqlite')) {
   pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 }
 
-// Initialize Database
 const initDatabase = async () => {
   try {
     if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('sqlite')) {
@@ -163,7 +193,6 @@ initDatabase().catch(err => {
   process.exit(1);
 });
 
-// Authentication Middleware
 const ensureAuthenticated = (req, res, next) => {
   if (!req.session.userId) {
     console.log('Redirecting to /login for authentication');
@@ -172,7 +201,6 @@ const ensureAuthenticated = (req, res, next) => {
   next();
 };
 
-// GraphQL Schema
 const typeDefs = `
   type Track {
     name: String!
@@ -319,7 +347,6 @@ app.use('/graphql', createYoga({
   context: ({ req }) => ({ userId: req.session.userId })
 }));
 
-// Routes
 app.get('/', (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
   if (!req.session.userId) {
@@ -379,6 +406,7 @@ app.get('/checkout', ensureAuthenticated, async (req, res) => {
       console.error('Checkout failed: No premium tracklists in cart');
       return res.status(400).json({ code: 400, message: 'No premium tracklists in cart' });
     }
+    console.log('Creating Stripe checkout session with API version 2024-09-30.acacia');
     const session = await stripe.checkout.sessions.create({
       ui_mode: 'embedded',
       payment_method_types: ['card'],
@@ -391,22 +419,22 @@ app.get('/checkout', ensureAuthenticated, async (req, res) => {
         quantity: 1
       })),
       mode: 'payment',
-      redirect_on_completion: 'never',
-      return_url: `${process.env.APP_URL}/tracks?page=${pageNum}`,
-      appearance: {
-        theme: 'stripe',
-        variables: { colorPrimary: '#1DB954' }
-      }
+      return_url: `${req.protocol}://${req.get('host')}/success?page=${pageNum}&session_id={CHECKOUT_SESSION_ID}`
     });
     res.json({ client_secret: session.client_secret, session_id: session.id });
   } catch (error) {
-    console.error('Stripe checkout error:', error.message);
-    return res.status(500).json({ code: 500, message: `Checkout failed: ${error.message}` });
+    console.error('Stripe checkout error:', {
+      message: error.message,
+      code: error.code,
+      type: error.type,
+      stack: error.stack
+    });
+    res.status(500).json({ code: 500, message: `Checkout failed: ${error.message}` });
   }
 });
 
-app.post('/verify-payment', ensureAuthenticated, async (req, res) => {
-  const { session_id } = req.body;
+app.get('/success', ensureAuthenticated, async (req, res) => {
+  const { page, session_id } = req.query;
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
     if (session.payment_status === 'paid') {
@@ -430,18 +458,14 @@ app.post('/verify-payment', ensureAuthenticated, async (req, res) => {
           : 'DELETE FROM cart WHERE userId = $1',
         [req.session.userId]
       );
-      res.json({ success: true });
+      res.redirect(`/tracks?page=${page || 1}`);
     } else {
-      res.status(400).json({ code: 400, message: 'Payment not completed' });
+      res.redirect(`/tracks?page=${page || 1}&error=Payment not completed`);
     }
   } catch (error) {
     console.error('Payment verification error:', error.message);
-    res.status(500).json({ code: 500, message: `Verification failed: ${error.message}` });
+    res.redirect(`/tracks?page=${page || 1}&error=Verification failed: ${error.message}`);
   }
-});
-
-app.get('/success', ensureAuthenticated, async (req, res) => {
-  res.redirect(`/tracks?page=${req.query.page || 1}`);
 });
 
 app.get('/login', (req, res) => {

@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Stripe.js with publishable key
   const stripe = Stripe(document.body.dataset.stripeKey || '');
   const cartModal = document.querySelector('.cart-modal');
   const cartItems = document.querySelector('.cart-items');
@@ -55,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cartTotal.textContent = `Total: $${total.toFixed(2)}`;
     } catch (error) {
       console.error('Error updating cart:', error.message);
-      cartItems.innerHTML = '<p>Error loading cart</p>';
+      cartItems.innerHTML = '<p>Error loading cart. Please try again.</p>';
     }
   };
 
@@ -92,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tracklistName = button.dataset.tracklistName;
       if (!tracklistName) {
         console.error('Unlock failed: Missing tracklistName');
-        return alert('Error: Invalid tracklist');
+        return alert('Error: Invalid tracklist. Please try again.');
       }
       const tracklistNumber = parseInt(tracklistName.replace('set', '')) || 0;
       const isFree = tracklistNumber <= 12;
@@ -110,27 +111,22 @@ document.addEventListener('DOMContentLoaded', () => {
           if (response.ok) {
             const card = button.closest('.track-card');
             const trackInfo = card.querySelector('.track-info');
-            // Store original track elements
             const trackElements = Array.from(card.querySelectorAll('.track-name'));
-            // Step 1: Animate font transition and unlock
             trackElements.forEach((name, index) => {
               setTimeout(() => {
                 name.classList.remove('locked');
                 name.classList.add('purchased', 'animate');
                 name.style.fontFamily = 'Arial, sans-serif';
-              }, index * 100); // Stagger by 100ms per track
+              }, index * 100);
             });
-            // Step 2: Reorder tracks to original order
             setTimeout(() => {
               trackElements.forEach((name, index) => {
                 const originalIndex = parseInt(name.dataset.originalIndex);
                 name.style.order = originalIndex;
                 name.classList.add('reorder');
               });
-            }, 200); // Start reordering after font transition begins
-            // Step 3: Insert and animate artist-release
+            }, 200);
             setTimeout(() => {
-              // Fetch original track data to insert artist-release in correct order
               fetch('/graphql', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -153,26 +149,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         name.insertAdjacentElement('afterend', artistRelease);
                         setTimeout(() => {
                           artistRelease.classList.add('visible');
-                        }, index * 50); // Slight stagger for artist-release
+                        }, index * 50);
                       }
                     });
                   }
                 })
                 .catch(error => console.error('Error fetching tracklist for artist-release:', error));
-            }, 300); // Start artist-release after reordering
+            }, 300);
             button.classList.remove('unlock');
             button.classList.add('unlocked');
             button.textContent = 'Unlocked';
             button.disabled = true;
             setTimeout(() => {
               window.location.reload();
-            }, 1200); // Delay to allow animations to complete
+            }, 1200);
           } else {
             console.error('Purchase failed:', result.message);
             if (result.code === 401) {
               window.location.href = `/login?redirect=/tracks?page=${new URLSearchParams(window.location.search).get('page') || 1}`;
             } else {
-              alert(result.message || 'Error unlocking tracklist');
+              alert(result.message || 'Error unlocking tracklist. Please try again.');
             }
           }
         } else {
@@ -192,13 +188,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.code === 401) {
               window.location.href = `/login?redirect=/tracks?page=${new URLSearchParams(window.location.search).get('page') || 1}`;
             } else {
-              alert(result.message || 'Error adding to cart');
+              alert(result.message || 'Error adding to cart. Please try again.');
             }
           }
         }
       } catch (error) {
         console.error('Network error:', error.message);
-        alert('Network error: ' + error.message);
+        alert('Network error: Unable to connect to the server. Please check your connection and try again.');
       }
     });
   });
@@ -207,129 +203,51 @@ document.addEventListener('DOMContentLoaded', () => {
   if (checkoutCartButton) {
     checkoutCartButton.addEventListener('click', async () => {
       const page = new URLSearchParams(window.location.search).get('page') || 1;
+      const closeModalButton = document.querySelector('.close-modal');
+      const checkoutContainer = document.getElementById('checkout-container');
       try {
-        const checkoutContainer = document.getElementById('checkout-container');
+        if (closeModalButton) closeModalButton.disabled = true;
         checkoutContainer.style.display = 'none';
         if (checkoutInstance) {
           checkoutInstance.unmount();
           checkoutInstance.destroy();
           checkoutInstance = null;
         }
+        checkoutCartButton.disabled = true;
+        checkoutCartButton.textContent = 'Loading...';
         const response = await fetch(`/checkout?page=${page}`, {
           credentials: 'include'
         });
         const result = await response.json();
         console.log('Checkout response:', result);
-        if (response.ok) {
+        if (response.ok && result.client_secret) {
           checkoutInstance = await stripe.initEmbeddedCheckout({
             clientSecret: result.client_secret
           });
+          if (!checkoutInstance || typeof checkoutInstance.mount !== 'function') {
+            throw new Error('Invalid checkout instance: Stripe Embedded Checkout failed to initialize.');
+          }
           checkoutContainer.style.display = 'block';
           checkoutCartButton.style.display = 'none';
           checkoutInstance.mount('#checkout-container');
-          checkoutInstance.on('complete', async () => {
-            const verifyResponse = await fetch('/verify-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ session_id: result.session_id }),
-              credentials: 'include'
-            });
-            const verifyResult = await verifyResponse.json();
-            if (verifyResponse.ok && verifyResult.success) {
-              checkoutInstance.unmount();
-              checkoutInstance.destroy();
-              checkoutInstance = null;
-              checkoutContainer.style.display = 'none';
-              checkoutCartButton.style.display = 'block';
-              cartModal.classList.remove('open');
-              await updateCart();
-              // Animate purchased tracklists
-              document.querySelectorAll('.track-card').forEach(card => {
-                if (card.querySelector('.unlocked')) {
-                  const trackElements = Array.from(card.querySelectorAll('.track-name'));
-                  // Font transition and unlock
-                  trackElements.forEach((name, index) => {
-                    setTimeout(() => {
-                      name.classList.remove('locked');
-                      name.classList.add('purchased', 'animate');
-                      name.style.fontFamily = 'Arial, sans-serif';
-                    }, index * 100);
-                  });
-                  // Reorder tracks
-                  setTimeout(() => {
-                    trackElements.forEach((name, index) => {
-                      const originalIndex = parseInt(name.dataset.originalIndex);
-                      name.style.order = originalIndex;
-                      name.classList.add('reorder');
-                    });
-                  }, 200);
-                  // Insert and animate artist-release
-                  setTimeout(() => {
-                    fetch('/graphql', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        query: `query { tracklists(page: ${page}) { name tracks { name artists release_date } } }`
-                      }),
-                      credentials: 'include'
-                    })
-                      .then(response => response.json())
-                      .then(({ data }) => {
-                        const tracklist = data.tracklists.find(t => t.name === card.dataset.tracklistName);
-                        if (tracklist) {
-                          trackElements.forEach((name, index) => {
-                            const track = tracklist.tracks.find(t => t.name === name.textContent);
-                            if (track) {
-                              const artistRelease = document.createElement('p');
-                              artistRelease.className = 'artist-release animate';
-                              artistRelease.style.order = name.style.order;
-                              artistRelease.textContent = `${track.artists.join(', ')} (${track.release_date ? track.release_date.slice(0, 4) : 'Unknown'})`;
-                              name.insertAdjacentElement('afterend', artistRelease);
-                              setTimeout(() => {
-                                artistRelease.classList.add('visible');
-                              }, index * 50);
-                            }
-                          });
-                        }
-                      })
-                      .catch(error => console.error('Error fetching tracklist for artist-release:', error));
-                  }, 300);
-                }
-              });
-              setTimeout(() => {
-                window.location.reload();
-              }, 1200);
-            } else {
-              alert(verifyResult.message || 'Payment verification failed');
-            }
-          });
-          checkoutInstance.on('error', (event) => {
-            console.error('Checkout error:', event.error);
-            alert('Payment failed: ' + event.error.message);
-            checkoutInstance.unmount();
-            checkoutInstance.destroy();
-            checkoutInstance = null;
-            checkoutContainer.style.display = 'none';
-            checkoutCartButton.style.display = 'block';
-          });
-          checkoutInstance.on('close', () => {
-            checkoutInstance.unmount();
-            checkoutInstance.destroy();
-            checkoutInstance = null;
-            checkoutContainer.style.display = 'none';
-            checkoutCartButton.style.display = 'block';
-          });
         } else {
           console.error('Checkout failed:', result.message);
-          if (result.code === 401) {
+          if (result.code === 400) {
+            alert(result.message || 'No items in cart to checkout. Please add some tracklists first.');
+          } else if (result.code === 401) {
             window.location.href = `/login?redirect=/tracks?page=${page}`;
           } else {
-            alert(result.message || 'Checkout error');
+            alert(result.message || 'Unable to initiate checkout. Please try again or contact support.');
           }
+          checkoutCartButton.disabled = false;
+          checkoutCartButton.textContent = 'Checkout';
+          if (closeModalButton) closeModalButton.disabled = false;
         }
       } catch (error) {
-        console.error('Checkout network error:', error.message);
-        alert('Checkout error: ' + error.message);
+        console.error('Checkout error:', error.message);
+        alert(error.message === 'Invalid checkout instance: Stripe Embedded Checkout failed to initialize.'
+          ? 'Failed to initialize payment form. Please refresh the page and try again.'
+          : 'Unable to connect to the server. Please check your connection and try again.');
         if (checkoutInstance) {
           checkoutInstance.unmount();
           checkoutInstance.destroy();
@@ -337,6 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         checkoutContainer.style.display = 'none';
         checkoutCartButton.style.display = 'block';
+        checkoutCartButton.disabled = false;
+        checkoutCartButton.textContent = 'Checkout';
+        if (closeModalButton) closeModalButton.disabled = false;
       }
     });
   }
@@ -351,6 +272,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       document.getElementById('checkout-container').style.display = 'none';
       document.querySelector('.checkout-cart').style.display = 'block';
+      document.querySelector('.checkout-cart').disabled = false;
+      document.querySelector('.checkout-cart').textContent = 'Checkout';
       cartModal.classList.remove('open');
     });
   }
@@ -375,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (error.message.includes('Not authenticated')) {
           window.location.href = `/login?redirect=/tracks?page=${new URLSearchParams(window.location.search).get('page') || 1}`;
         } else {
-          alert('Error clearing cart: ' + error.message);
+          alert('Error clearing cart: Unable to connect to the server. Please try again.');
         }
       }
     });
@@ -388,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = '/';
     } catch (error) {
       console.error('Logout failed:', error.message);
-      alert('Error logging out: ' + error.message);
+      alert('Error logging out: Unable to connect to the server. Please try again.');
     }
   });
 });
