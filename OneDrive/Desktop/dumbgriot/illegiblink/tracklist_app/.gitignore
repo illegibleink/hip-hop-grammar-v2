@@ -4,8 +4,8 @@ tracklists.json
 node_modules/
 *.log
 
-# Windows system and user directories (prevent scanning outside project)
-/AppData/
+# Windows system and user directories (prevent scanning outside projec# Add ! before other folders you want to include, e.g., !README.md
+# Windows system and user directories (from untracked list and permission warnings)
 /Application Data/
 /Cookies/
 /Documents/
@@ -34,37 +34,38 @@ node_modules/
 *.blf
 *.regtrans-ms
 
-# Hidden files and caches
-/.gitconfig
-/.gitignore  # Global one, if any
+# Hidden files and caches (from untracked list)
+/.VirtualBox/
+/.bash_history
 /.cache/
+/.codeium/
 /.conda/
+/.condarc
 /.config/
 /.continuum/
 /.docker/
 /.dotnet/
+/.gitconfig
+/.gitignore  # Global one, if any
+/.gittar/
 /.idea/
 /.ipynb_checkpoints/
 /.ipython/
 /.jupyter/
+/.lesshst
 /.matplotlib/
 /.node_repl_history
 /.openbb_terminal/
-/.ssh/
 /.spyder-py3/
+/.ssh/
 /.vscode/
-/.VirtualBox/
-/.bash_history
-/.codeium/
-/.condarc
-/.continuum/
-/.gittar/
-/.lesshst
 /.windows-build-tools/
 /.yarnrc
 /_netrc
 
-# Development tools and installs
+# Development tools and installs (from untracked list)
+/GameMakerProjects/
+/IntelGraphicsProfiles/
 *.exe
 *.msi
 *.zip
@@ -76,16 +77,26 @@ node_modules/
 /hardhat-verification/
 /hrdht/
 /j5create-22.01.0602.3179.exe
+/java_error_in_pycharm64.hprof
 /OpenBB/
 /OpenBBTerminal/
 /OpenBBUserData/
 /postgis_3_4_pg12.exe
 /postgis_3_4_pg16.exe
+/postgis_3_4_pg16.exe-20240613113448
+/postgis_3_4_pg16.exe-20240717001614
 /pyscript-main/
+/pyscript-main.zip
 /SteamSetup.exe
 /edb_languagepack_4.exe
+/package.json
+/d.temperatureMax
+/dateParser(d.date)
+/xScale(xAccessor(d)))
+/yScale(yAccessor(d)))
+/{
 
-# Project backups and unrelated files
+# Project backups and unrelated files (from untracked list)
 /tracklist_app_backup/
 /databases/
 /MusicBrainzApp/
@@ -94,26 +105,67 @@ node_modules/
 /Business/
 /Coding_sTUFF/
 /Editors/
-/GameMakerProjects/
-/IntelGraphicsProfiles/
 /resources/
 /__MACOSX/
-*.txt  # Adjust if you want to track specific .txt files
-*.docx
-*.pdf
-*.xlsx
-*.odt
-*.pptx
-*.json  # Exclude all JSON except what you add explicitly; adjust if needed
-*.sql
-*.ipynb
-/Documents/  # Subfolder exclusions
+/1st.txt
+/1stNewsletter.txt
+/GeeksQuizApp.txt
+/Grammar.blurb
+/Newsletter1.5.docx
+/RemedyList.txt
+/[].txt
+/apiIDs.txt
+/codes.txt
+/coverscript.txt
+/enriched_data.txt
+/f1040sc.pdf
+/grammar1&2.txt
+/grammarISRC.txt
+/grammarJSON.txt
+/grammarReady.txt
+/grimoire-53-74.txt
+/grimoire.sql
+/missing.txt
+/plycopy.txt
+/Document*.docx
+/Documents/001/
+/Documents/Blurb/
+/Documents/CLM.xlsx
+/Documents/Custom Office Templates/
+/Documents/Excel_files/
+/Documents/GitHub/coffee-region-taste-profile-map/
+/Documents/LibreOffice_7.1.3_Win_x64.msi
+/Documents/My 001 Games/
+/Documents/NinjaTrader 8/
+/Documents/Redshift 8 Premium/
+/Documents/Redshift_9_Premium/
+/Documents/Rithmic/
+/Documents/Untitled 2.odt
+/Documents/World Builder's Compendium/
+/Documents/description.odt
+/Documents/desktop.ini
+/Documents/grammarJSONnew.txt
+/Documents/grimoire_ebook.docx
+/Documents/hiphopgrammar/
+/Documents/letter.txt
+/Documents/mapcomponent.txt
+/Getting started with OneDrive.pdf
+/Personal Vault.lnk
+/Presentation.pptx
+/grimoire.json
+/hiphopgrammar/
+/hiphopgrammar_illegibleink.pdf
+/risc_unedited.json
 /.849C9593-D756-4E56-8D6E-42412F2A707B
+/Untitled.ipynb
 
 # Database and temp files (if not tracking them)
 *.db
 data/dev.db
 data/sessions.db
+
+# Explicitly allow tracks.json.enc (in case *.enc is ignored)
+!data/tracks.json.enc
 
 # Ignore everything in parent directories (safety net)
 /*
@@ -121,123 +173,4 @@ data/sessions.db
 !data/
 !src/
 !public/
-# Add ! before other folders you want to include, e.g., !README.md
-
-# Windows system and user directories (prevent scanning outside project)
-/AppData/
-/Application Data/
-/Cookies/
-/Documents/
-/Downloads/
-/Favorites/
-/Links/
-/Music/
-/Pictures/
-/Videos/
-/Saved Games/
-/Local Settings/
-/My Documents/
-/NetHood/
-/PrintHood/
-/Recent/
-/SendTo/
-/Start Menu/
-/Templates/
-/3D Objects/
-/Contacts/
-/NTUSER*
-/ntuser*
-/OneDrive*/
-/desktop.ini
-*.lnk
-*.blf
-*.regtrans-ms
-
-# Hidden files and caches
-/.gitconfig
-/.gitignore  # Global one, if any
-/.cache/
-/.conda/
-/.config/
-/.continuum/
-/.docker/
-/.dotnet/
-/.idea/
-/.ipynb_checkpoints/
-/.ipython/
-/.jupyter/
-/.matplotlib/
-/.node_repl_history
-/.openbb_terminal/
-/.ssh/
-/.spyder-py3/
-/.vscode/
-/.VirtualBox/
-/.bash_history
-/.codeium/
-/.condarc
-/.continuum/
-/.gittar/
-/.lesshst
-/.windows-build-tools/
-/.yarnrc
-/_netrc
-
-# Development tools and installs
-*.exe
-*.msi
-*.zip
-/anaconda3/
-/codecrafters-redis-javascript/
-/contracts/
-/go/
-/hardhat-tutorial/
-/hardhat-verification/
-/hrdht/
-/j5create-22.01.0602.3179.exe
-/OpenBB/
-/OpenBBTerminal/
-/OpenBBUserData/
-/postgis_3_4_pg12.exe
-/postgis_3_4_pg16.exe
-/pyscript-main/
-/SteamSetup.exe
-/edb_languagepack_4.exe
-
-# Project backups and unrelated files
-/tracklist_app_backup/
-/databases/
-/MusicBrainzApp/
-/myBIBLE - AstrololgyApp/
-/BOIR/
-/Business/
-/Coding_sTUFF/
-/Editors/
-/GameMakerProjects/
-/IntelGraphicsProfiles/
-/resources/
-/__MACOSX/
-*.txt  # Adjust if you want to track specific .txt files
-*.docx
-*.pdf
-*.xlsx
-*.odt
-*.pptx
-*.json  # Exclude all JSON except what you add explicitly; adjust if needed
-*.sql
-*.ipynb
-/Documents/  # Subfolder exclusions
-/.849C9593-D756-4E56-8D6E-42412F2A707B
-
-# Database and temp files (if not tracking them)
-*.db
-data/dev.db
-data/sessions.db
-
-# Ignore everything in parent directories (safety net)
-/*
-!.git
-!data/
-!src/
-!public/
-# Add ! before other folders you want to include, e.g., !README.md
+# Add ! before other folders/files you want to include, e.g., !README.md
