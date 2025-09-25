@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isDark = body.classList.contains('dark-mode');
     body.classList.toggle('dark-mode', !isDark);
     body.classList.toggle('light-mode', isDark);
-    themeToggle.textContent = isDark ? '☀️' : '🌙';
+    themeToggle.textContent = isDark ? '☀' : '☾'; ' : '
     fetch('/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -30,11 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (savedTheme === 'dark') {
     body.classList.add('dark-mode');
     body.classList.remove('light-mode');
-    themeToggle.textContent = '☀️';
+    themeToggle.textContent = '☀';
   } else {
     body.classList.add('light-mode');
     body.classList.remove('dark-mode');
-    themeToggle.textContent = '🌙';
+    themeToggle.textContent = '☾';
   }
 
   themeToggle.addEventListener('click', toggleTheme);

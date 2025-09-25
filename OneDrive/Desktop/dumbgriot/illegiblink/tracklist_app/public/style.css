@@ -15,6 +15,11 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
+body.dark-mode {
+  background-color: #1a1a1a;
+  color: #fff;
+}
+
 /* Responsive Wrapper */
 .wrapper {
   max-width: 1280px;
