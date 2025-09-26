@@ -355,6 +355,7 @@ app.get('/', (req, res) => {
   res.render('title', { stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY });
 });
 
+// In the tracklists page route
 app.get('/tracks', ensureAuthenticated, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
   const page = parseInt(req.query.page) || 1;

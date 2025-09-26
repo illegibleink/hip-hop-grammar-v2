@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Stripe.js with publishable key
   const stripe = Stripe(document.body.dataset.stripeKey || '');
   const cartModal = document.querySelector('.cart-modal');
   const cartItems = document.querySelector('.cart-items');
@@ -8,12 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const body = document.body;
   let checkoutInstance = null;
 
-  // Theme Toggle
   const toggleTheme = () => {
     const isDark = body.classList.contains('dark-mode');
     body.classList.toggle('dark-mode', !isDark);
     body.classList.toggle('light-mode', isDark);
-    themeToggle.textContent = isDark ? '☀' : '☾'; ' : '
+    themeToggle.textContent = isDark ? '☀' : '☾';
     fetch('/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -25,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('theme', isDark ? 'light' : 'dark');
   };
 
-  // Initialize Theme
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'dark') {
     body.classList.add('dark-mode');
@@ -120,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }, index * 100);
             });
             setTimeout(() => {
-              trackElements.forEach((name, index) => {
+              trackElements.forEach((name) => {
                 const originalIndex = parseInt(name.dataset.originalIndex);
                 name.style.order = originalIndex;
                 name.classList.add('reorder');
@@ -144,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       if (track) {
                         const artistRelease = document.createElement('p');
                         artistRelease.className = 'artist-release animate';
-                        artistRelease.style.order = name.style.order;
+                        artistRelease.style.order = parseFloat(name.style.order) + 0.5;
                         artistRelease.textContent = `${track.artists.join(', ')} (${track.release_date ? track.release_date.slice(0, 4) : 'Unknown'})`;
                         name.insertAdjacentElement('afterend', artistRelease);
                         setTimeout(() => {
@@ -246,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         console.error('Checkout error:', error.message);
         alert(error.message === 'Invalid checkout instance: Stripe Embedded Checkout failed to initialize.'
-          ? 'Failed to initialize payment form. Please refresh the page and try again.'
+          ? 'Failed to initialize Marketplace payment form. Please refresh the page and try again.'
           : 'Unable to connect to the server. Please check your connection and try again.');
         if (checkoutInstance) {
           checkoutInstance.unmount();

@@ -21,14 +21,14 @@ html
         else
           each tracklist, tracklistName in tracklists
             - const isPurchased = purchasedTracklists.includes(tracklistName)
-            - const sortedTracks = isPurchased ? tracklist.tracks : [...tracklist.tracks].sort((a, b) => a.name.localeCompare(b.name))
-            .track-card(data-tracklist-name=tracklistName data-year-span=tracklist.yearSpan data-genres=tracklist.uniqueGenres.join(',') class=(parseInt(tracklist.name.slice(1)) <= 12 ? 'nineties' : 'twenties'))
+            - const sortedTracks = isPurchased ? tracklist.tracks.map((track, index) => ({ ...track, originalIndex: index })) : [...tracklist.tracks].sort((a, b) => a.name.localeCompare(b.name)).map((track, index) => ({ ...track, originalIndex: index }))
+            .track-card(data-tracklist-name=tracklistName data-year-span=tracklist.yearSpan data-genres=tracklist.uniqueGenres.join(',') class=(parseInt(tracklist.name.slice(3)) <= 12 ? 'nineties' : 'twenties'))
               .track-info
                 h3 #{tracklist.name}
                 each track in sortedTracks
-                  p.track-name(class=(isPurchased ? 'purchased' : 'locked')) #{track.name}
+                  p.track-name(class=(isPurchased ? 'purchased' : 'locked') data-original-index=track.originalIndex style=`order: ${track.originalIndex}`) #{track.name}
                   if isPurchased
-                    p.artist-release(class='visible') #{track.artists.join(', ')} (#{track.release_date ? track.release_date.slice(0, 4) : 'Unknown'})
+                    p.artist-release(class='visible' style=`order: ${track.originalIndex + 0.5}`) #{track.artists.join(', ')} (#{track.release_date ? track.release_date.slice(0, 4) : 'Unknown'})
               .track-actions
                 if isPurchased
                   button.unlocked(disabled) Unlocked
@@ -49,5 +49,5 @@ html
       .footer
         a(href='/privacy') Privacy Policy
         a(href='/terms') Terms of Service
-        button.theme-toggle(title='Toggle Theme') ☀️
+        button.theme-toggle(title='Toggle Theme') #{theme === 'dark-mode' ? '☀️' : '☾'}
     script(src='/scripts.js')
