@@ -9,30 +9,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const toggleTheme = () => {
     const isDark = body.classList.contains('dark-mode');
+    const newTheme = isDark ? 'light-mode' : 'dark-mode';
     body.classList.toggle('dark-mode', !isDark);
     body.classList.toggle('light-mode', isDark);
-    themeToggle.textContent = isDark ? '☀' : '☾';
+    themeToggle.textContent = isDark ? '☀️' : '☾';
+    localStorage.setItem('theme', newTheme);
+    fetch('/set-theme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ theme: newTheme }),
+      credentials: 'include'
+    }).catch(error => console.error('Error saving theme:', error));
     fetch('/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query: `mutation { setTheme(theme: "${isDark ? 'light' : 'dark'}") }`
+        query: `mutation { setTheme(theme: "${newTheme}") }`
       }),
       credentials: 'include'
-    }).catch(error => console.error('Error saving theme:', error));
-    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    }).catch(error => console.error('Error saving theme to GraphQL:', error));
   };
 
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'dark') {
-    body.classList.add('dark-mode');
-    body.classList.remove('light-mode');
-    themeToggle.textContent = '☀';
-  } else {
+  // Initialize theme
+  const savedTheme = localStorage.getItem('theme') || body.classList.contains('dark-mode') ? 'dark-mode' : 'light-mode';
+  if (savedTheme === 'light-mode') {
     body.classList.add('light-mode');
     body.classList.remove('dark-mode');
     themeToggle.textContent = '☾';
+  } else {
+    body.classList.add('dark-mode');
+    body.classList.remove('light-mode');
+    themeToggle.textContent = '☀️';
   }
+  fetch('/set-theme', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ theme: savedTheme }),
+    credentials: 'include'
+  }).catch(error => console.error('Error syncing theme:', error));
 
   themeToggle.addEventListener('click', toggleTheme);
 
@@ -122,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 name.style.order = originalIndex;
                 name.classList.add('reorder');
               });
-            }, 200);
+            }, 150);
             setTimeout(() => {
               fetch('/graphql', {
                 method: 'POST',
@@ -152,14 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
                   }
                 })
                 .catch(error => console.error('Error fetching tracklist for artist-release:', error));
-            }, 300);
+            }, 200);
             button.classList.remove('unlock');
             button.classList.add('unlocked');
             button.textContent = 'Unlocked';
             button.disabled = true;
             setTimeout(() => {
               window.location.reload();
-            }, 1200);
+            }, 1000);
           } else {
             console.error('Purchase failed:', result.message);
             if (result.code === 401) {
@@ -263,10 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (closeModalButton) {
     closeModalButton.addEventListener('click', () => {
       try {
-        // Hide the modal
         cartModal.classList.remove('open');
-        
-        // Hide and clean up Stripe checkout
         const checkoutContainer = document.getElementById('checkout-container');
         if (checkoutContainer) {
           checkoutContainer.style.display = 'none';
@@ -276,16 +287,12 @@ document.addEventListener('DOMContentLoaded', () => {
           checkoutInstance.destroy();
           checkoutInstance = null;
         }
-        
-        // Reset checkout button
         const checkoutCartButton = document.querySelector('.checkout-cart');
         if (checkoutCartButton) {
           checkoutCartButton.style.display = 'block';
           checkoutCartButton.disabled = false;
           checkoutCartButton.textContent = 'Checkout';
         }
-        
-        // Ensure close button is enabled
         closeModalButton.disabled = false;
       } catch (error) {
         console.error('Error closing cart modal:', error.message);

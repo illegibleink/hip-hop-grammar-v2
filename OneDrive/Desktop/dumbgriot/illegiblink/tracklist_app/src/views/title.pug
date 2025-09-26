@@ -1,12 +1,25 @@
 html
   head
-    title hip hop grammar: an original anthology of rhythmic american poetry
+    title #{pageTitle || 'Welcome'}
     link(rel='stylesheet' href='/style.css')
     script(src='https://js.stripe.com/v3/')
-  body(data-stripe-key=stripePublishableKey class=theme || 'light-mode')
+  body(data-stripe-key=stripePublishableKey class=theme || 'dark-mode')
     .wrapper
-      h1 hip hop grammar
-      a(href='/tracks?page=1') View Tracklists
+      .header-row
+        .header-column.logo-column
+          a.home-logo(href='/')
+            img(src='/logo-home.svg' alt='Logo' width='40' height='auto')
+        .header-column.title-column
+          .title-wrapper
+            h1 #{pageTitle || 'Welcome'}
+            h2 Discover Your Music
+        .header-column.logout-column
+          if user
+            a.logout-button(href='/logout') Logout
+      .launch-content
+        .centered-content
+          img.grammar-cover(src='/public/grammarCoverNoBG.png' alt='Grammar Cover Image')
+          a.spotify-button(href='/tracks') View Tracklists
       .footer
         a(href='/privacy') Privacy Policy
         a(href='/terms') Terms of Service

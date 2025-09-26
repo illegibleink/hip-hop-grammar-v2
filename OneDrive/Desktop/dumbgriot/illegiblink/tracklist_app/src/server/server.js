@@ -227,6 +227,7 @@ const typeDefs = `
     addAllToCart(page: Int!): Boolean!
     clearCart: Boolean!
     purchaseTracklist(tracklistName: String!): Boolean!
+    setTheme(theme: String!): Boolean!
   }
 `;
 const resolvers = {
@@ -324,6 +325,11 @@ const resolvers = {
       );
       console.log(`Purchased tracklist ${tracklistName} for user ${userId}`);
       return true;
+    },
+    setTheme: async (_, { theme }, { userId }) => {
+      if (!userId) throw new Error('Not authenticated');
+      if (!['dark-mode', 'light-mode'].includes(theme)) throw new Error('Invalid theme');
+      return true; // Theme is stored client-side and in session; no database storage needed
     }
   }
 };
@@ -340,7 +346,7 @@ const isPurchased = rule()(async (_, { name }, { userId }) => {
 const permissions = shield({
   Track: { name: isAuthenticated, artists: and(isAuthenticated, isPurchased) },
   Query: { cart: isAuthenticated },
-  Mutation: { addToCart: isAuthenticated, addAllToCart: isAuthenticated, clearCart: isAuthenticated, purchaseTracklist: isAuthenticated }
+  Mutation: { addToCart: isAuthenticated, addAllToCart: isAuthenticated, clearCart: isAuthenticated, purchaseTracklist: isAuthenticated, setTheme: isAuthenticated }
 });
 app.use('/graphql', createYoga({
   schema: makeExecutableSchema({ typeDefs, resolvers }),
@@ -351,13 +357,16 @@ app.get('/', (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
   if (!req.session.userId) {
     req.session.userId = crypto.randomUUID();
+    req.session.theme = 'dark-mode'; // Default to dark mode
   }
-  res.render('title', { stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY });
+  res.render('title', { stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY, theme: req.session.theme || 'dark-mode' });
 });
 
-// In the tracklists page route
 app.get('/tracks', ensureAuthenticated, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
+  if (!req.session.theme) {
+    req.session.theme = 'dark-mode'; // Default to dark mode
+  }
   const page = parseInt(req.query.page) || 1;
   const purchasedTracklists = req.session.userId
     ? (await pool.query(
@@ -389,8 +398,17 @@ app.get('/tracks', ensureAuthenticated, async (req, res) => {
     totalPages,
     pageTitle,
     stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
-    theme: req.session.theme || 'light-mode'
+    theme: req.session.theme || 'dark-mode'
   });
+});
+
+app.post('/set-theme', ensureAuthenticated, (req, res) => {
+  const { theme } = req.body;
+  if (!['dark-mode', 'light-mode'].includes(theme)) {
+    return res.status(400).json({ code: 400, message: 'Invalid theme' });
+  }
+  req.session.theme = theme;
+  res.json({ success: true });
 });
 
 app.get('/checkout', ensureAuthenticated, async (req, res) => {
@@ -471,7 +489,8 @@ app.get('/success', ensureAuthenticated, async (req, res) => {
 
 app.get('/login', (req, res) => {
   req.session.userId = crypto.randomUUID();
-  console.log('User logged in, userId:', req.session.userId);
+  req.session.theme = req.session.theme || 'dark-mode'; // Default to dark mode
+  console.log('User logged in, userId:', req.session.userId, 'theme:', req.session.theme);
   const redirectTo = req.query.redirect || '/tracks?page=1';
   res.redirect(redirectTo);
 });
