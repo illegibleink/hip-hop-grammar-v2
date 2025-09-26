@@ -202,6 +202,7 @@ body.dark-mode .track-name, body.dark-mode .artist-release {
   max-height: 100vh;
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
 
 body.dark-mode .cart-modal {
@@ -216,7 +217,7 @@ body.dark-mode .cart-modal {
 .cart-items {
   flex-grow: 1;
   overflow-y: auto;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
 .cart-total {
@@ -224,15 +225,21 @@ body.dark-mode .cart-modal {
   font-weight: bold;
 }
 
+.checkout-cart, .clear-cart, .close-modal {
+  margin: 5px 0; /* Consistent spacing, no sticky positioning */
+}
+
 #checkout-container {
   width: 100%;
-  height: 400px;
+  min-height: 300px;
+  max-height: 60vh;
   border: none;
   border-radius: 5px;
   margin-top: 10px;
   background: rgba(255, 255, 255, 0.95);
-  overflow: hidden;
+  overflow-y: auto;
   contain: strict;
+  padding-bottom: 20px;
 }
 
 body.dark-mode #checkout-container {
@@ -458,8 +465,13 @@ body.dark-mode .highlight {
   }
 
   #checkout-container {
-    width: 100%;
-    height: 50vh;
-    min-height: 300px;
+    min-height: 250px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-bottom: 20px;
+  }
+
+  .checkout-cart, .clear-cart, .close-modal {
+    margin: 5px 0; /* Consistent spacing for mobile */
   }
 }

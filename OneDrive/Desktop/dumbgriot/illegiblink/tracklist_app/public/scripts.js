@@ -262,16 +262,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModalButton = document.querySelector('.close-modal');
   if (closeModalButton) {
     closeModalButton.addEventListener('click', () => {
-      if (checkoutInstance) {
-        checkoutInstance.unmount();
-        checkoutInstance.destroy();
-        checkoutInstance = null;
+      try {
+        // Hide the modal
+        cartModal.classList.remove('open');
+        
+        // Hide and clean up Stripe checkout
+        const checkoutContainer = document.getElementById('checkout-container');
+        if (checkoutContainer) {
+          checkoutContainer.style.display = 'none';
+        }
+        if (checkoutInstance) {
+          checkoutInstance.unmount();
+          checkoutInstance.destroy();
+          checkoutInstance = null;
+        }
+        
+        // Reset checkout button
+        const checkoutCartButton = document.querySelector('.checkout-cart');
+        if (checkoutCartButton) {
+          checkoutCartButton.style.display = 'block';
+          checkoutCartButton.disabled = false;
+          checkoutCartButton.textContent = 'Checkout';
+        }
+        
+        // Ensure close button is enabled
+        closeModalButton.disabled = false;
+      } catch (error) {
+        console.error('Error closing cart modal:', error.message);
+        alert('Error closing cart. Please try again.');
       }
-      document.getElementById('checkout-container').style.display = 'none';
-      document.querySelector('.checkout-cart').style.display = 'block';
-      document.querySelector('.checkout-cart').disabled = false;
-      document.querySelector('.checkout-cart').textContent = 'Checkout';
-      cartModal.classList.remove('open');
     });
   }
 
