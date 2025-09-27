@@ -326,10 +326,11 @@ const resolvers = {
       console.log(`Purchased tracklist ${tracklistName} for user ${userId}`);
       return true;
     },
-    setTheme: async (_, { theme }, { userId }) => {
+    setTheme: async (_, { theme }, { userId, req }) => {
       if (!userId) throw new Error('Not authenticated');
       if (!['dark-mode', 'light-mode'].includes(theme)) throw new Error('Invalid theme');
-      return true; // Theme is stored client-side and in session; no database storage needed
+      req.session.theme = theme;
+      return true;
     }
   }
 };
@@ -350,23 +351,22 @@ const permissions = shield({
 });
 app.use('/graphql', createYoga({
   schema: makeExecutableSchema({ typeDefs, resolvers }),
-  context: ({ req }) => ({ userId: req.session.userId })
+  context: ({ req }) => ({ userId: req.session.userId, req })
 }));
 
 app.get('/', (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
   if (!req.session.userId) {
     req.session.userId = crypto.randomUUID();
-    req.session.theme = 'dark-mode'; // Default to dark mode
   }
-  res.render('title', { stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY, theme: req.session.theme || 'dark-mode' });
+  res.render('title', { 
+    stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY, 
+    theme: req.session.theme || 'dark-mode'
+  });
 });
 
 app.get('/tracks', ensureAuthenticated, async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
-  if (!req.session.theme) {
-    req.session.theme = 'dark-mode'; // Default to dark mode
-  }
   const page = parseInt(req.query.page) || 1;
   const purchasedTracklists = req.session.userId
     ? (await pool.query(
@@ -489,8 +489,7 @@ app.get('/success', ensureAuthenticated, async (req, res) => {
 
 app.get('/login', (req, res) => {
   req.session.userId = crypto.randomUUID();
-  req.session.theme = req.session.theme || 'dark-mode'; // Default to dark mode
-  console.log('User logged in, userId:', req.session.userId, 'theme:', req.session.theme);
+  console.log('User logged in, userId:', req.session.userId, 'theme:', req.session.theme || 'dark-mode');
   const redirectTo = req.query.redirect || '/tracks?page=1';
   res.redirect(redirectTo);
 });

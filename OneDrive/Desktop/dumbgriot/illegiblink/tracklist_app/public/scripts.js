@@ -7,12 +7,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const body = document.body;
   let checkoutInstance = null;
 
+  // Initialize theme immediately
+  const savedTheme = localStorage.getItem('theme') || (body.classList.contains('light-mode') ? 'light-mode' : 'dark-mode');
+  body.classList.remove('dark-mode', 'light-mode');
+  body.classList.add(savedTheme);
+  if (themeToggle) {
+    themeToggle.textContent = savedTheme === 'light-mode' ? '☾' : '☀️';
+  }
+  
+  // Sync theme with server
+  fetch('/set-theme', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ theme: savedTheme }),
+    credentials: 'include'
+  }).catch(error => console.error('Error syncing theme:', error));
+
   const toggleTheme = () => {
     const isDark = body.classList.contains('dark-mode');
     const newTheme = isDark ? 'light-mode' : 'dark-mode';
-    body.classList.toggle('dark-mode', !isDark);
-    body.classList.toggle('light-mode', isDark);
-    themeToggle.textContent = isDark ? '☀️' : '☾';
+    body.classList.remove('dark-mode', 'light-mode');
+    body.classList.add(newTheme);
+    themeToggle.textContent = newTheme === 'light-mode' ? '☾' : '☀️';
     localStorage.setItem('theme', newTheme);
     fetch('/set-theme', {
       method: 'POST',
@@ -30,27 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(error => console.error('Error saving theme to GraphQL:', error));
   };
 
-  // Initialize theme
-  const savedTheme = localStorage.getItem('theme') || body.classList.contains('dark-mode') ? 'dark-mode' : 'light-mode';
-  if (savedTheme === 'light-mode') {
-    body.classList.add('light-mode');
-    body.classList.remove('dark-mode');
-    themeToggle.textContent = '☾';
-  } else {
-    body.classList.add('dark-mode');
-    body.classList.remove('light-mode');
-    themeToggle.textContent = '☀️';
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
   }
-  fetch('/set-theme', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ theme: savedTheme }),
-    credentials: 'include'
-  }).catch(error => console.error('Error syncing theme:', error));
-
-  themeToggle.addEventListener('click', toggleTheme);
 
   const updateCart = async () => {
+    if (!cartItems || !cartTotal) return;
     try {
       const response = await fetch('/graphql', {
         method: 'POST',
@@ -327,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.querySelector('.logout-button').addEventListener('click', async (e) => {
+  document.querySelector('.logout-button')?.addEventListener('click', async (e) => {
     e.preventDefault();
     try {
       await fetch('/logout', { method: 'POST', credentials: 'include' });

@@ -9,10 +9,14 @@
 
 body {
   font-family: Arial, sans-serif;
-  background-color: #1a1a1a; /* Default to dark mode */
-  color: #fff; /* Default to dark mode */
+  background-color: #1a1a1a; /* Fallback */
+  color: #fff; /* Fallback */
   margin: 0;
   padding: 20px;
+  transition: none; /* Prevent flash on load */
+}
+
+body[class*="mode"] {
   transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
 }
 
@@ -237,7 +241,7 @@ body.light-mode .artist-release {
   height: 100%;
   background-color: #333; /* Default to dark mode */
   box-shadow: -2px 0 5px rgba(255, 255, 255, 0.1);
-  transition: right 0.4s ease-in-out; /* Smoother slide */
+  transition: right 0.4s ease-in-out;
   z-index: 1000;
   padding: 20px;
   box-sizing: border-box;
@@ -423,11 +427,11 @@ body.light-mode .theme-toggle {
 }
 
 .highlight {
-  animation: highlight 1s ease-in-out; /* Shortened for smoothness */
+  animation: highlight 1s ease-in-out;
 }
 
 @keyframes highlight {
-  0% { box-shadow: 0 0 8px rgba(29, 185, 84, 0.8); } /* Softer glow */
+  0% { box-shadow: 0 0 8px rgba(29, 185, 84, 0.8); }
   100% { box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
 }
 

@@ -1,0 +1,14 @@
+html
+  head
+    title #{pageTitle || 'Welcome'}
+    link(rel='stylesheet' href='/style.css')
+    script(src='https://js.stripe.com/v3/')
+    style.
+      body {
+        background-color: #{theme === 'light-mode' ? '#f4f4f4' : '#1a1a1a'};
+        color: #{theme === 'light-mode' ? '#333' : '#fff'};
+      }
+  body(data-stripe-key=stripePublishableKey class=theme || 'dark-mode')
+    .wrapper
+      block content
+    script(src='/scripts.js')
