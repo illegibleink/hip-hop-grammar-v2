@@ -7,10 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const body = document.body;
   let checkoutInstance = null;
 
-  // Initialize theme immediately
+  // Initialize theme and force consistency
   const savedTheme = localStorage.getItem('theme') || (body.classList.contains('light-mode') ? 'light-mode' : 'dark-mode');
   body.classList.remove('dark-mode', 'light-mode');
   body.classList.add(savedTheme);
+  // Force inline styles to match theme
+  body.style.backgroundColor = savedTheme === 'light-mode' ? '#f4f4f4' : '#1a1a1a';
+  body.style.color = savedTheme === 'light-mode' ? '#333' : '#fff';
   if (themeToggle) {
     themeToggle.textContent = savedTheme === 'light-mode' ? '☾' : '☀️';
   }
@@ -28,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const newTheme = isDark ? 'light-mode' : 'dark-mode';
     body.classList.remove('dark-mode', 'light-mode');
     body.classList.add(newTheme);
+    // Update inline styles
+    body.style.backgroundColor = newTheme === 'light-mode' ? '#f4f4f4' : '#1a1a1a';
+    body.style.color = newTheme === 'light-mode' ? '#333' : '#fff';
     themeToggle.textContent = newTheme === 'light-mode' ? '☾' : '☀️';
     localStorage.setItem('theme', newTheme);
     fetch('/set-theme', {
@@ -173,6 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
             button.textContent = 'Unlocked';
             button.disabled = true;
             setTimeout(() => {
+              // Force theme sync after reload
+              localStorage.setItem('theme', savedTheme);
               window.location.reload();
             }, 1000);
           } else {

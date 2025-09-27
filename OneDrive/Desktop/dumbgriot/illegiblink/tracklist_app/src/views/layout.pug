@@ -7,6 +7,10 @@ html
       body {
         background-color: #{theme === 'light-mode' ? '#f4f4f4' : '#1a1a1a'};
         color: #{theme === 'light-mode' ? '#333' : '#fff'};
+        transition: none; /* Prevent flash on load */
+      }
+      body[class*="mode"] {
+        transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
       }
   body(data-stripe-key=stripePublishableKey class=theme || 'dark-mode')
     .wrapper
