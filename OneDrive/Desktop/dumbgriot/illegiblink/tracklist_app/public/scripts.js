@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   body.style.backgroundColor = savedTheme === 'light-mode' ? '#f4f4f4' : '#1a1a1a';
   body.style.color = savedTheme === 'light-mode' ? '#333' : '#fff';
   if (themeToggle) {
-    themeToggle.textContent = savedTheme === 'light-mode' ? '☾' : '☀️';
+    themeToggle.textContent = savedTheme === 'light-mode' ? '☾' : '☀';
   }
   
   // Sync theme with server
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update inline styles
     body.style.backgroundColor = newTheme === 'light-mode' ? '#f4f4f4' : '#1a1a1a';
     body.style.color = newTheme === 'light-mode' ? '#333' : '#fff';
-    themeToggle.textContent = newTheme === 'light-mode' ? '☾' : '☀️';
+    themeToggle.textContent = newTheme === 'light-mode' ? '☾' : '☀';
     localStorage.setItem('theme', newTheme);
     fetch('/set-theme', {
       method: 'POST',
