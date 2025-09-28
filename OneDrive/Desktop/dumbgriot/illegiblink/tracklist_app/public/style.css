@@ -116,29 +116,25 @@ body.light-mode h2 {
   width: 100%;
   max-width: 100%; /* Respect container's 2/3 width */
   margin: 1rem auto;
-  background-color: #333; /* Default to dark mode */
+  background-color: transparent; /* Fully transparent */
   border-radius: 8px;
-  box-shadow: 0 0px 0px rgba(255, 255, 255, 0.1);
+  box-shadow: none; /* Remove shadow for clean look */
   position: relative;
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
+  transition: transform 0.3s ease-in-out;
   cursor: pointer;
 }
 
 body.light-mode .track-card {
-  background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: transparent; /* Transparent in light mode */
+  box-shadow: none;
 }
 
 body.light-mode .track-card:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.15);
-  background-color: #f9f9f9;
 }
 
 body.dark-mode .track-card:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 4px rgba(255, 255, 255, 0.0);
-  background-color: #3a3a3a;
 }
 
 body.dark-mode .track-name, body.dark-mode .artist-release {
@@ -155,12 +151,12 @@ body.light-mode .artist-release {
 
 .track-info {
   padding: 1.5vw;
-  text-align: center; /* Center all text content */
+  text-align: center;
 }
 
 .track-info h3 {
   font-size: 18pt;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 1rem 0; /* Increased margin below title */
 }
 
 .track-name {
@@ -446,7 +442,7 @@ body.light-mode .theme-toggle {
 
 @keyframes highlight {
   0% { box-shadow: 0 0 8px rgba(29, 185, 84, 0.8); }
-  100% { box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+  100% { box-shadow: none; } /* No shadow with transparent card */
 }
 
 body.light-mode .highlight {
@@ -455,7 +451,7 @@ body.light-mode .highlight {
 
 @keyframes highlight-light {
   0% { box-shadow: 0 0 8px rgba(29, 185, 84, 0.8); }
-  100% { box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+  100% { box-shadow: none; }
 }
 
 body.dark-mode .highlight {
@@ -464,10 +460,10 @@ body.dark-mode .highlight {
 
 @keyframes highlight-dark {
   0% { box-shadow: 0 0 8px rgba(29, 185, 84, 0.8); }
-  100% { box-shadow: 2px 2px 2px 2px rgba(255, 255, 255, 0.1); }
+  100% { box-shadow: none; }
 }
 
-/* Responsive Design: Adjust font sizes for smaller screens */
+/* Responsive Design: Adjust font sizes and margins for smaller screens */
 @media (max-width: 600px) {
   body {
     padding: 3vw;
@@ -491,11 +487,12 @@ body.dark-mode .highlight {
 
   .track-info {
     padding: 2vw;
-    text-align: center; /* Center text on mobile */
+    text-align: center;
   }
 
   .track-info h3 {
     font-size: 20pt;
+    margin-bottom: 1.5rem; /* Increased margin for mobile */
   }
 
   .track-name {
